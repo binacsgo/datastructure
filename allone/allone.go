@@ -8,25 +8,25 @@ import (
 // Node define the node that
 type Node struct {
 	val int64
-	set map[string]struct{}
+	set map[interface{}]struct{}
 }
 
 func NewNode(val int64) *Node {
 	return &Node{
 		val: val,
-		set: make(map[string]struct{}),
+		set: make(map[interface{}]struct{}),
 	}
 }
 
-func (n *Node) Erase(key string) {
+func (n *Node) Erase(key interface{}) {
 	delete(n.set, key)
 }
 
-func (n *Node) Insert(key string) {
+func (n *Node) Insert(key interface{}) {
 	n.set[key] = struct{}{}
 }
 
-func (n *Node) Has(key string) bool {
+func (n *Node) Has(key interface{}) bool {
 	_, ok := n.set[key]
 	return ok
 }
@@ -35,7 +35,7 @@ func (n *Node) Size() int64 {
 	return int64(len(n.set))
 }
 
-func (n *Node) PickOneKey() string {
+func (n *Node) PickOneKey() interface{} {
 	for k := range n.set {
 		return k
 	}
@@ -45,7 +45,7 @@ func (n *Node) PickOneKey() string {
 // -------------- AllOne --------------
 type AllOne struct {
 	data *list.List
-	hash map[string]*list.Element
+	hash map[interface{}]*list.Element
 }
 
 func Constructor() AllOne {
@@ -54,11 +54,11 @@ func Constructor() AllOne {
 	data.PushBack(NewNode(math.MaxInt64))
 	return AllOne{
 		data: data,
-		hash: make(map[string]*list.Element, 0),
+		hash: make(map[interface{}]*list.Element, 0),
 	}
 }
 
-func (this *AllOne) add_to_right(ele *list.Element, key string, val int64) *list.Element {
+func (this *AllOne) add_to_right(ele *list.Element, key interface{}, val int64) *list.Element {
 	if ele.Next().Value.(*Node).val == val {
 		ele.Next().Value.(*Node).Insert(key)
 	} else {
@@ -69,7 +69,7 @@ func (this *AllOne) add_to_right(ele *list.Element, key string, val int64) *list
 	return ele.Next()
 }
 
-func (this *AllOne) add_to_left(ele *list.Element, key string, val int64) *list.Element {
+func (this *AllOne) add_to_left(ele *list.Element, key interface{}, val int64) *list.Element {
 	if ele.Prev().Value.(*Node).val == val {
 		ele.Prev().Value.(*Node).Insert(key)
 	} else {
@@ -84,7 +84,7 @@ func (this *AllOne) remove(node *list.Element) {
 	this.data.Remove(node)
 }
 
-func (this *AllOne) Inc(key string) {
+func (this *AllOne) Inc(key interface{}) {
 	if _, ok := this.hash[key]; !ok {
 		this.hash[key] = this.add_to_right(this.data.Front(), key, 1)
 	} else {
@@ -98,7 +98,7 @@ func (this *AllOne) Inc(key string) {
 	}
 }
 
-func (this *AllOne) Dec(key string) {
+func (this *AllOne) Dec(key interface{}) {
 	if _, ok := this.hash[key]; !ok {
 		return
 	}
@@ -115,14 +115,14 @@ func (this *AllOne) Dec(key string) {
 	}
 }
 
-func (this *AllOne) GetMaxKey() string {
+func (this *AllOne) GetMaxKey() interface{} {
 	if len(this.hash) > 0 {
 		return this.data.Back().Prev().Value.(*Node).PickOneKey()
 	}
 	return ""
 }
 
-func (this *AllOne) GetMinKey() string {
+func (this *AllOne) GetMinKey() interface{} {
 	if len(this.hash) > 0 {
 		return this.data.Front().Next().Value.(*Node).PickOneKey()
 	}
