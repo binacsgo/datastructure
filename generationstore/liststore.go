@@ -1,5 +1,15 @@
 package generationstore
 
+import (
+	"fmt"
+	"sort"
+	"sync/atomic"
+)
+
+func nextGeneration(generation *uint64) uint64 {
+	return atomic.AddUint64(generation, 1)
+}
+
 // ------------------- ListItem -------------------
 type ListItem struct {
 	key string
@@ -41,11 +51,14 @@ func (item *ListItem) remove() {
 	}
 }
 
-// ------------------- ListStoreImpl -------------------
+// ListStoreImpl implement the ListStore interface.
+// We will store all the objects in hashmap and linked-list, and maintain the StoredObj's generation
+// according to ListStoreImpl.generation.
+// And the linked-list will be organized in descending order of generation.
 type ListStoreImpl struct {
 	store      map[string]*ListItem
 	head       *ListItem
-	generation int64
+	generation uint64 // generation hold the global max-generation in this store.
 }
 
 var (
@@ -70,8 +83,11 @@ func (s *ListStoreImpl) Get(key string) StoredObj {
 	return item.StoredObj
 }
 
+// Set will update the ListItem if it has been existed, or create a new ListItem to hold it.
+// The ListStoreImpl.generation will be updated and the ListItem will be moved to head.
 func (s *ListStoreImpl) Set(key string, obj StoredObj) {
-	if s == nil {
+	if s == nil || obj == nil {
+		// obj == nil, return directly.
 		return
 	}
 	var item *ListItem
@@ -114,6 +130,9 @@ func (s *ListStoreImpl) Len() int {
 	return len(s.store)
 }
 
+// UpdateRawStore update RawStore according the generation.
+// We will update the RawStore by linked-list firstly, and by RawStore.UpdatedSet. Finally refresh the
+// RawStore.generation and do cleanup.
 func (s *ListStoreImpl) UpdateRawStore(store RawStore, cloneFunc CloneFunc, cleanFunc CleanFunc) {
 	if s == nil || store == nil {
 		return
@@ -145,6 +164,18 @@ func (s *ListStoreImpl) HashStore() HashStore {
 	return ret
 }
 
+func (s *ListStoreImpl) String() string {
+	if s == nil {
+		return "{}"
+	}
+	items := []string{}
+	for k, item := range s.store {
+		items = append(items, fmt.Sprintf("{%v:%v}", k, item.StoredObj))
+	}
+	sort.Strings(items)
+	return fmt.Sprintf("{Store:%v}", items)
+}
+
 func (s *ListStoreImpl) remove(item *ListItem) {
 	if s == nil || item == nil {
 		return
@@ -152,25 +183,5 @@ func (s *ListStoreImpl) remove(item *ListItem) {
 	item.remove()
 	if s.head == item {
 		s.head = item.Next()
-	}
-}
-
-func DefaultCleanFunc(cache ListStore, snapshot RawStore) CleanFunc {
-	return func() {
-		if cache == nil || snapshot == nil {
-			return
-		}
-		if cache.Len() != snapshot.Len() {
-			diff := snapshot.Len() - cache.Len()
-			for key := range snapshot.HashStore() {
-				if diff <= 0 {
-					break
-				}
-				if cache.Get(key) == nil {
-					snapshot.Delete(key)
-					diff--
-				}
-			}
-		}
 	}
 }

@@ -1,12 +1,19 @@
 package generationstore
 
-import "k8s.io/apimachinery/pkg/util/sets"
+import (
+	"fmt"
+	"sort"
 
-// ------------------- RawStoreImpl -------------------
+	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+// RawStoreImpl implement the RawStore interface.
+// StoredObj will be stored in a raw hashmap, and RawStoreImpl.generation hold
+// the max-generation of these items.
 type RawStoreImpl struct {
 	store      HashStore
-	generation int64
-	updatedSet sets.String
+	generation uint64
+	updatedSet sets.String // updatedSet record all the items may be changed in RawStoreImpl.
 }
 
 var (
@@ -59,17 +66,21 @@ func (s *RawStoreImpl) HashStore() HashStore {
 	if s == nil {
 		return nil
 	}
-	return s.store
+	ret := make(HashStore, s.Len())
+	for k := range s.store {
+		ret[k] = s.store[k]
+	}
+	return ret
 }
 
-func (s *RawStoreImpl) SetGeneration(generation int64) {
+func (s *RawStoreImpl) SetGeneration(generation uint64) {
 	if s == nil {
 		return
 	}
 	s.generation = generation
 }
 
-func (s *RawStoreImpl) GetGeneration() int64 {
+func (s *RawStoreImpl) GetGeneration() uint64 {
 	if s == nil {
 		return 0
 	}
@@ -77,5 +88,20 @@ func (s *RawStoreImpl) GetGeneration() int64 {
 }
 
 func (s *RawStoreImpl) UpdatedSet() sets.String {
+	if s == nil {
+		return sets.NewString()
+	}
 	return s.updatedSet
+}
+
+func (s *RawStoreImpl) String() string {
+	if s == nil {
+		return "{}"
+	}
+	items := []string{}
+	for k, item := range s.store {
+		items = append(items, fmt.Sprintf("{%v:%v}", k, item))
+	}
+	sort.Strings(items)
+	return fmt.Sprintf("{Store:%v}", items)
 }
