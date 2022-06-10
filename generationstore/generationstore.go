@@ -32,6 +32,7 @@ type RawStore interface {
 	SetGeneration(uint64)
 	GetGeneration() uint64
 	UpdatedSet() sets.String
+	ResetUpdatedSet()
 }
 
 type (

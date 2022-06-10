@@ -150,6 +150,7 @@ func (s *ListStoreImpl) UpdateRawStore(store RawStore, cloneFunc CloneFunc, clea
 		}
 	}
 	store.SetGeneration(s.generation)
+	store.ResetUpdatedSet()
 	cleanFunc()
 }
 

@@ -94,6 +94,13 @@ func (s *RawStoreImpl) UpdatedSet() sets.String {
 	return s.updatedSet
 }
 
+func (s *RawStoreImpl) ResetUpdatedSet() {
+	if s == nil {
+		return
+	}
+	s.updatedSet = sets.NewString()
+}
+
 func (s *RawStoreImpl) String() string {
 	if s == nil {
 		return "{}"
