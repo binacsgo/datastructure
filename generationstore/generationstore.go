@@ -8,6 +8,11 @@ type StoredObj interface {
 	SetGeneration(uint64)
 }
 
+type (
+	StoreRangeFunc          func(string, StoredObj)
+	StoreConditionRangeFunc func(string, StoredObj) bool
+)
+
 // Store defines the field that the some-datastructure will hold if it need generatestore.
 // The Store field's real object is either ListStore or RawStore.
 type Store interface {
@@ -15,7 +20,8 @@ type Store interface {
 	Set(string, StoredObj)
 	Delete(string)
 	Len() int
-	HashStore() HashStore
+	Range(StoreRangeFunc)
+	ConditionRange(StoreConditionRangeFunc) bool
 	String() string
 }
 
@@ -52,15 +58,17 @@ func DefaultCleanFunc(cache ListStore, snapshot RawStore) CleanFunc {
 		}
 		if cache.Len() != snapshot.Len() {
 			diff := snapshot.Len() - cache.Len()
-			for key := range snapshot.HashStore() {
-				if diff <= 0 {
-					break
-				}
-				if cache.Get(key) == nil {
-					snapshot.Delete(key)
-					diff--
-				}
-			}
+			snapshot.ConditionRange(
+				func(key string, _ StoredObj) bool {
+					if diff <= 0 {
+						return false
+					}
+					if cache.Get(key) == nil {
+						snapshot.Delete(key)
+						diff--
+					}
+					return true
+				})
 		}
 	}
 }

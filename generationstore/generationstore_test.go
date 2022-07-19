@@ -98,11 +98,11 @@ func TestGenerationStore(t *testing.T) {
 			t.Errorf("Length not equal! got = %v, want = %v", snapshot.Len(), cache.Len())
 		}
 
-		for k, o1 := range cache.HashStore() {
+		cache.Range(func(k string, o1 StoredObj) {
 			if o2 := snapshot.Get(k); o2 == nil || !equalTestingObj(o1.(testingObj), o2.(testingObj)) {
 				t.Errorf("Obj not equal between cache and snapshot! got = %v, want = %v", o2, o1)
 			}
-		}
+		})
 
 		if obj := snapshot.Get("a"); obj != nil {
 			t.Errorf("Dirty data still exist in snapshot! obj = %v", obj)

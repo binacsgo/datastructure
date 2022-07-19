@@ -130,6 +130,27 @@ func (s *ListStoreImpl) Len() int {
 	return len(s.store)
 }
 
+func (s *ListStoreImpl) Range(f StoreRangeFunc) {
+	if s == nil {
+		return
+	}
+	for k, item := range s.store {
+		f(k, item.StoredObj)
+	}
+}
+
+func (s *ListStoreImpl) ConditionRange(f StoreConditionRangeFunc) bool {
+	if s == nil {
+		return false
+	}
+	for k, item := range s.store {
+		if !f(k, item.StoredObj) {
+			return true
+		}
+	}
+	return false
+}
+
 // UpdateRawStore update RawStore according the generation.
 // We will update the RawStore by linked-list firstly, and by RawStore.UpdatedSet. Finally refresh the
 // RawStore.generation and do cleanup.
@@ -144,9 +165,11 @@ func (s *ListStoreImpl) UpdateRawStore(store RawStore, cloneFunc CloneFunc, clea
 		}
 		cloneFunc(e.key, e.StoredObj)
 	}
-	for _, key := range store.UpdatedSet().UnsortedList() {
+	for key := range store.UpdatedSet() {
 		if s.store[key] != nil {
 			cloneFunc(key, s.store[key].StoredObj)
+		} else {
+			store.Delete(key)
 		}
 	}
 	store.SetGeneration(s.generation)

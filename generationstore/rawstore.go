@@ -62,15 +62,25 @@ func (s *RawStoreImpl) Len() int {
 	return len(s.store)
 }
 
-func (s *RawStoreImpl) HashStore() HashStore {
+func (s *RawStoreImpl) Range(f StoreRangeFunc) {
 	if s == nil {
-		return nil
+		return
 	}
-	ret := make(HashStore, s.Len())
-	for k := range s.store {
-		ret[k] = s.store[k]
+	for k, item := range s.store {
+		f(k, item)
 	}
-	return ret
+}
+
+func (s *RawStoreImpl) ConditionRange(f StoreConditionRangeFunc) bool {
+	if s == nil {
+		return false
+	}
+	for k, item := range s.store {
+		if !f(k, item) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *RawStoreImpl) SetGeneration(generation uint64) {

@@ -32,12 +32,12 @@ func TestListStore(t *testing.T) {
 			}
 		}
 
-		for key, obj := range store.HashStore() {
+		store.Range(func(key string, obj StoredObj) {
 			index, _ := strconv.Atoi(key)
 			if obj != objs[index] {
 				t.Errorf("Obj not equal in HashStore! key = %v, get = %v, want = %v", key, obj, objs[index])
 			}
-		}
+		})
 
 		{
 			index := 4
