@@ -8,25 +8,25 @@ import (
 // Node define the node that
 type Node struct {
 	val int64
-	set map[interface{}]struct{}
+	set map[any]struct{}
 }
 
 func NewNode(val int64) *Node {
 	return &Node{
 		val: val,
-		set: make(map[interface{}]struct{}),
+		set: make(map[any]struct{}),
 	}
 }
 
-func (n *Node) Erase(key interface{}) {
+func (n *Node) Erase(key any) {
 	delete(n.set, key)
 }
 
-func (n *Node) Insert(key interface{}) {
+func (n *Node) Insert(key any) {
 	n.set[key] = struct{}{}
 }
 
-func (n *Node) Has(key interface{}) bool {
+func (n *Node) Has(key any) bool {
 	_, ok := n.set[key]
 	return ok
 }
@@ -35,30 +35,30 @@ func (n *Node) Size() int64 {
 	return int64(len(n.set))
 }
 
-func (n *Node) PickOneKey() interface{} {
+func (n *Node) PickOneKey() any {
 	for k := range n.set {
 		return k
 	}
 	return ""
 }
 
-// -------------- AllOne --------------
-type AllOne struct {
+// -------------- AllOneMinMax --------------
+type AllOneMinMax struct {
 	data *list.List
-	hash map[interface{}]*list.Element
+	hash map[any]*list.Element
 }
 
-func Constructor() AllOne {
+func AllOneMinMaxConstructor() AllOneMinMax {
 	data := list.New()
 	data.PushFront(NewNode(math.MinInt64))
 	data.PushBack(NewNode(math.MaxInt64))
-	return AllOne{
+	return AllOneMinMax{
 		data: data,
-		hash: make(map[interface{}]*list.Element, 0),
+		hash: make(map[any]*list.Element, 0),
 	}
 }
 
-func (this *AllOne) add_to_right(ele *list.Element, key interface{}, val int64) *list.Element {
+func (this *AllOneMinMax) add_to_right(ele *list.Element, key any, val int64) *list.Element {
 	if ele.Next().Value.(*Node).val == val {
 		ele.Next().Value.(*Node).Insert(key)
 	} else {
@@ -69,7 +69,7 @@ func (this *AllOne) add_to_right(ele *list.Element, key interface{}, val int64) 
 	return ele.Next()
 }
 
-func (this *AllOne) add_to_left(ele *list.Element, key interface{}, val int64) *list.Element {
+func (this *AllOneMinMax) add_to_left(ele *list.Element, key any, val int64) *list.Element {
 	if ele.Prev().Value.(*Node).val == val {
 		ele.Prev().Value.(*Node).Insert(key)
 	} else {
@@ -80,11 +80,11 @@ func (this *AllOne) add_to_left(ele *list.Element, key interface{}, val int64) *
 	return ele.Prev()
 }
 
-func (this *AllOne) remove(node *list.Element) {
+func (this *AllOneMinMax) remove(node *list.Element) {
 	this.data.Remove(node)
 }
 
-func (this *AllOne) Inc(key interface{}) {
+func (this *AllOneMinMax) Inc(key any) {
 	if _, ok := this.hash[key]; !ok {
 		this.hash[key] = this.add_to_right(this.data.Front(), key, 1)
 	} else {
@@ -98,7 +98,7 @@ func (this *AllOne) Inc(key interface{}) {
 	}
 }
 
-func (this *AllOne) Dec(key interface{}) {
+func (this *AllOneMinMax) Dec(key any) {
 	if _, ok := this.hash[key]; !ok {
 		return
 	}
@@ -115,14 +115,14 @@ func (this *AllOne) Dec(key interface{}) {
 	}
 }
 
-func (this *AllOne) GetMaxKey() interface{} {
+func (this *AllOneMinMax) GetMaxKey() any {
 	if len(this.hash) > 0 {
 		return this.data.Back().Prev().Value.(*Node).PickOneKey()
 	}
 	return ""
 }
 
-func (this *AllOne) GetMinKey() interface{} {
+func (this *AllOneMinMax) GetMinKey() any {
 	if len(this.hash) > 0 {
 		return this.data.Front().Next().Value.(*Node).PickOneKey()
 	}
@@ -130,7 +130,7 @@ func (this *AllOne) GetMinKey() interface{} {
 }
 
 /**
- * Your AllOne object will be instantiated and called as such:
+ * Your AllOneMinMax object will be instantiated and called as such:
  * obj := Constructor();
  * obj.Inc(key);
  * obj.Dec(key);

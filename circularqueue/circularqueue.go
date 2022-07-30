@@ -6,7 +6,7 @@ type CircularQueue struct {
 	head int
 	tail int
 	size int
-	data []interface{}
+	data []any
 }
 
 func NewCircularQueue(size int) *CircularQueue {
@@ -17,7 +17,7 @@ func NewCircularQueue(size int) *CircularQueue {
 		head: 0,
 		tail: 0,
 		size: size,
-		data: make([]interface{}, size+1),
+		data: make([]any, size+1),
 	}
 }
 
@@ -44,7 +44,7 @@ func (q *CircularQueue) IsFull() bool {
 	return (q.tail+1)%(q.size+1) == q.head
 }
 
-func (q *CircularQueue) EnQueue(item interface{}) bool {
+func (q *CircularQueue) EnQueue(item any) bool {
 	if q.IsFull() {
 		return false
 	}
@@ -53,7 +53,7 @@ func (q *CircularQueue) EnQueue(item interface{}) bool {
 	return true
 }
 
-func (q *CircularQueue) DeQueue() (interface{}, bool) {
+func (q *CircularQueue) DeQueue() (any, bool) {
 	if q.IsEmpty() {
 		return nil, false
 	}
@@ -62,14 +62,14 @@ func (q *CircularQueue) DeQueue() (interface{}, bool) {
 	return item, true
 }
 
-func (q *CircularQueue) Front() interface{} {
+func (q *CircularQueue) Front() any {
 	if q.IsEmpty() {
 		return nil
 	}
 	return q.data[q.head]
 }
 
-func (q *CircularQueue) Rear() interface{} {
+func (q *CircularQueue) Rear() any {
 	if q.IsEmpty() {
 		return nil
 	}

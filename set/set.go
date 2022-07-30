@@ -3,24 +3,24 @@ package set
 import "fmt"
 
 type Set interface {
-	Exist(item interface{}) bool
-	Insert(item ...interface{})
-	Delete(item ...interface{})
+	Exist(item any) bool
+	Insert(item ...any)
+	Delete(item ...any)
 	Len() int
-	List() []interface{}
+	List() []any
 }
 
 type SetImpl struct {
-	data map[interface{}]struct{}
+	data map[any]struct{}
 }
 
 func NewSet() Set {
 	return &SetImpl{
-		data: make(map[interface{}]struct{}),
+		data: make(map[any]struct{}),
 	}
 }
 
-func (s *SetImpl) Exist(item interface{}) bool {
+func (s *SetImpl) Exist(item any) bool {
 	if s == nil {
 		return false
 	}
@@ -28,7 +28,7 @@ func (s *SetImpl) Exist(item interface{}) bool {
 	return ok
 }
 
-func (s *SetImpl) Insert(items ...interface{}) {
+func (s *SetImpl) Insert(items ...any) {
 	if s == nil {
 		return
 	}
@@ -40,7 +40,7 @@ func (s *SetImpl) Insert(items ...interface{}) {
 	}
 }
 
-func (s *SetImpl) Delete(items ...interface{}) {
+func (s *SetImpl) Delete(items ...any) {
 	if s == nil {
 		return
 	}
@@ -59,11 +59,11 @@ func (s *SetImpl) Len() int {
 	return len(s.data)
 }
 
-func (s *SetImpl) List() []interface{} {
+func (s *SetImpl) List() []any {
 	if s == nil {
 		return nil
 	}
-	ret := make([]interface{}, 0)
+	ret := make([]any, 0)
 	for k := range s.data {
 		ret = append(ret, k)
 	}

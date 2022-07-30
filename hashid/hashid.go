@@ -5,28 +5,28 @@ import (
 )
 
 type HashID interface {
-	Get(string) int64
-	Lookup(int64) string
-	Exist(string) bool
+	Get(any) int64
+	Lookup(int64) any
+	Exist(any) bool
 	Len() int64
 }
 
 type HashIDImpl struct {
-	data   map[string]int64
-	lookup map[int64]string
+	data   map[any]int64
+	lookup map[int64]any
 	id     int64
 	mu     sync.RWMutex
 }
 
 func NewHashID() HashID {
 	return &HashIDImpl{
-		data:   make(map[string]int64),
-		lookup: make(map[int64]string),
+		data:   make(map[any]int64),
+		lookup: make(map[int64]any),
 		id:     0,
 	}
 }
 
-func (h *HashIDImpl) Get(key string) int64 {
+func (h *HashIDImpl) Get(key any) int64 {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	_, ok := h.data[key]
@@ -38,14 +38,14 @@ func (h *HashIDImpl) Get(key string) int64 {
 	return h.data[key]
 }
 
-func (h *HashIDImpl) Lookup(id int64) string {
+func (h *HashIDImpl) Lookup(id int64) any {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	key := h.lookup[id]
 	return key
 }
 
-func (h *HashIDImpl) Exist(key string) bool {
+func (h *HashIDImpl) Exist(key any) bool {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	_, ok := h.data[key]

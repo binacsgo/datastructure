@@ -5,7 +5,7 @@ import (
 )
 
 /**
- * Your AllOne object will be instantiated and called as such:
+ * Your AllOneMinMax object will be instantiated and called as such:
  * obj := Constructor();
  * obj.Inc(key);
  * obj.Dec(key);
@@ -13,7 +13,7 @@ import (
  * param_4 := obj.GetMinKey();
  */
 
-func TestAllOne(t *testing.T) {
+func TestAllOneMinMax(t *testing.T) {
 	type args struct {
 		op []string
 		in []string
@@ -34,7 +34,7 @@ func TestAllOne(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			this := Constructor()
+			this := AllOneMinMaxConstructor()
 			for i := range tt.args.op {
 				switch tt.args.op[i] {
 				case "inc":
