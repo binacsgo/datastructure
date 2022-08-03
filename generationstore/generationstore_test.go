@@ -77,8 +77,8 @@ func TestGenerationStore(t *testing.T) {
 		}
 
 		// Insert dirty data
-		snapshot.Set("a", objs[0])
-		snapshot.Set("0", objs[9])
+		snapshot.Set("a", newTestingObj("0"))
+		snapshot.Set("0", newTestingObj("9"))
 
 		cache.UpdateRawStore(
 			snapshot,

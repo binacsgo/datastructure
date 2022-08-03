@@ -164,6 +164,7 @@ func (s *ListStoreImpl) UpdateRawStore(store RawStore, cloneFunc CloneFunc, clea
 			break
 		}
 		cloneFunc(e.key, e.StoredObj)
+		store.UpdatedSet().Delete(e.key)
 	}
 	for key := range store.UpdatedSet() {
 		if s.store[key] != nil {
