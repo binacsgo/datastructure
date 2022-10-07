@@ -7,31 +7,36 @@ import (
 )
 
 type obj struct {
-	k int
-	v int
+	k  int
+	v  int
+	sz int
 }
 
-var _ StoredObj = &obj{}
+var (
+	_ Comparable = &obj{}
+	_ StoredObj  = &obj{}
+)
 
 func makeObj(k, v int) StoredObj {
-	return &obj{k: k, v: v}
+	return &obj{k: k, v: v, sz: 1}
 }
 
-func (o *obj) Key() string {
-	if o == nil {
-		return "empty"
+func (o *obj) Key() string                { return strconv.Itoa(o.k) }
+func (o *obj) String() string             { return o.Key() + fmt.Sprintf("(%d)", o.sz) }
+func (o *obj) Compare(so Comparable) bool { return o.v > so.(*obj).v }
+func (o *obj) Maintain(ls, rs StoredObj) {
+	o.sz = 1
+	if ls != nil {
+		o.sz += ls.(*obj).sz
 	}
-	return strconv.Itoa(o.k)
+	if rs != nil {
+		o.sz += rs.(*obj).sz
+	}
 }
 
 func Test_Splay(t *testing.T) {
-	s := NewSplay(
-		func(so1, so2 StoredObj) bool {
-			o1, o2 := so1.(*obj), so2.(*obj)
-			return o1.v > o2.v
-		},
-		nil,
-	)
+	s := NewSplay()
+	t.Log(s.PrintTree())
 
 	for i := 1; i < 10; i++ {
 		for j := 1; j < 4; j++ {
@@ -45,7 +50,7 @@ func Test_Splay(t *testing.T) {
 		if s.Len() != i*3 {
 			t.Errorf("There are %v items in splay, expect %v", s.Len(), i*4)
 		}
-		fmt.Printf("After i=%v got splay: %s\n", i, s)
+		t.Logf("After i=%v got splay: %s\n", i, s)
 	}
 	for j := 1; j < 4; j++ {
 		for i := 1; i < 10; i++ {
@@ -54,7 +59,42 @@ func Test_Splay(t *testing.T) {
 			}
 			s.Delete(makeObj(i*10+j, i))
 		}
-		fmt.Printf("After j=%v got splay: %s\n", j, s)
+		t.Logf("After j=%v got splay: %s\n", j, s)
 	}
+}
 
+func Test_Rotate(t *testing.T) {
+	s := NewSplay()
+	t.Log(s.PrintTree())
+
+	for i := 1; i < 10; i++ {
+		for j := 1; j < 4; j++ {
+			s.Insert(makeObj(i*10+j, i))
+		}
+	}
+	t.Log(s.PrintTree())
+	for j := 1; j < 2; j++ {
+		for i := 1; i < 10; i++ {
+			if s.Get(makeObj(i*10+j, i)) == nil {
+				t.Errorf("There should be %v in splay.", i*10+j)
+			}
+			s.Delete(makeObj(i*10+j, i))
+		}
+		t.Logf("After j=%v got splay: %s\n", j, s)
+	}
+	t.Log(s.PrintTree())
+	s.Partition(makeObj(59, 5))
+	t.Log(s.PrintTree())
+	for j := 2; j < 4; j++ {
+		for i := 1; i < 10; i++ {
+			if s.Get(makeObj(i*10+j, i)) == nil {
+				t.Errorf("There should be %v in splay.", i*10+j)
+			}
+			s.Delete(makeObj(i*10+j, i))
+		}
+		t.Logf("After j=%v got splay: %s\n", j, s)
+	}
+	t.Log(s.PrintTree())
+
+	s.Partition(makeObj(59, 5))
 }
