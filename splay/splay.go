@@ -47,6 +47,8 @@ var (
 )
 
 type (
+	// RangeFunc visit objects by inorder traversal.
+	RangeFunc func(StoredObj)
 	// ConditionRangeFunc visit objects by inorder traversal.
 	ConditionRangeFunc func(StoredObj) bool
 )
@@ -84,6 +86,8 @@ type Splay interface {
 	// Partition will bring together all objects strictly smaller than the current object
 	// in a subtree and return the root of the subtree.
 	Partition(StoredObj) StoredObj
+	// Range traverses the entire splay in mid-order.
+	Range(RangeFunc)
 	// ConditionRange traverses the entire splay in mid-order and ends the access immediately
 	// if ConditionRangeFunc returns false.
 	ConditionRange(ConditionRangeFunc)
@@ -193,6 +197,21 @@ func (s *splay) Partition(obj StoredObj) StoredObj {
 		return nil
 	}
 	return next.son[0].obj
+}
+
+func (s *splay) Range(f RangeFunc) {
+	var dfs func(n *node)
+	dfs = func(n *node) {
+		if n == nil {
+			return
+		}
+		dfs(n.son[0])
+		if n != s.minv && n != s.maxv {
+			f(n.obj)
+		}
+		dfs(n.son[1])
+	}
+	dfs(s.root)
 }
 
 func (s *splay) ConditionRange(f ConditionRangeFunc) {
