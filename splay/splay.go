@@ -85,7 +85,7 @@ type Splay interface {
 	Get(StoredObj) StoredObj
 	// Partition will bring together all objects strictly smaller than the current object
 	// in a subtree and return the root of the subtree.
-	Partition(StoredObj) StoredObj
+	Partition(Comparable) StoredObj
 	// Range traverses the entire splay in mid-order.
 	Range(RangeFunc)
 	// ConditionRange traverses the entire splay in mid-order and ends the access immediately
@@ -181,7 +181,7 @@ func (s *splay) Get(obj StoredObj) StoredObj {
 	return n.obj
 }
 
-func (s *splay) Partition(obj StoredObj) StoredObj {
+func (s *splay) Partition(obj Comparable) StoredObj {
 	s.splay(s.minv, nil)
 	var next *node
 	for p := s.root; p != nil; {
