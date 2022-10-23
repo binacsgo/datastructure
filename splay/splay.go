@@ -54,22 +54,22 @@ type (
 )
 
 type node struct {
-	son    []*node
+	child  []*node
 	parent *node
 	obj    StoredObj
 }
 
 func newNode(o StoredObj, p *node) *node {
 	return &node{
-		son:    make([]*node, 2),
+		child:  make([]*node, 2),
 		parent: p,
 		obj:    o,
 	}
 }
 
-// getSonIndex indicates whether `x` is the right son of `y`.
-func getSonIndex(x, y *node) int {
-	if y != nil && y.son[1] == x {
+// getChildIndex indicates whether `x` is the right child of `y`.
+func getChildIndex(x, y *node) int {
+	if y != nil && y.child[1] == x {
 		return 1
 	}
 	return 0
@@ -100,11 +100,11 @@ type Splay interface {
 }
 
 type splay struct {
-	root           *node
-	minv, maxv     *node
-	index          map[string]*node
-	chooseSonIndex func(Comparable, *node) int
-	maintain       func(*node)
+	root             *node
+	minv, maxv       *node
+	index            map[string]*node
+	chooseChildIndex func(Comparable, *node) int
+	maintain         func(*node)
 }
 
 func NewSplay() Splay {
@@ -113,23 +113,23 @@ func NewSplay() Splay {
 		maxv:  newNode(maxObj, nil),
 		index: make(map[string]*node),
 	}
-	s.minv.son[1], s.maxv.parent = s.maxv, s.minv
+	s.minv.child[1], s.maxv.parent = s.maxv, s.minv
 	s.root = s.minv
-	s.chooseSonIndex = func(o Comparable, n *node) int {
+	s.chooseChildIndex = func(o Comparable, n *node) int {
 		if n == s.minv || n != s.maxv && o.Compare(n.obj) {
 			return 1
 		}
 		return 0
 	}
 	s.maintain = func(n *node) {
-		var leftSonObj, rightSonObj StoredObj
-		if n.son[0] != nil && n.son[0] != s.minv {
-			leftSonObj = n.son[0].obj
+		var leftChildObj, rightChildObj StoredObj
+		if n.child[0] != nil && n.child[0] != s.minv {
+			leftChildObj = n.child[0].obj
 		}
-		if n.son[1] != nil && n.son[1] != s.maxv {
-			rightSonObj = n.son[1].obj
+		if n.child[1] != nil && n.child[1] != s.maxv {
+			rightChildObj = n.child[1].obj
 		}
-		n.obj.Maintain(leftSonObj, rightSonObj)
+		n.obj.Maintain(leftChildObj, rightChildObj)
 	}
 	return s
 }
@@ -141,12 +141,12 @@ func (s *splay) Insert(v StoredObj) bool {
 	n := s.root
 	var p *node
 	for n != nil {
-		p, n = n, n.son[s.chooseSonIndex(v, n)]
+		p, n = n, n.child[s.chooseChildIndex(v, n)]
 	}
 	n = newNode(v, p)
 	s.index[v.Key()] = n
 	if p != nil {
-		p.son[s.chooseSonIndex(v, p)] = n
+		p.child[s.chooseChildIndex(v, p)] = n
 	}
 	s.splay(n, nil)
 	return true
@@ -159,14 +159,14 @@ func (s *splay) Delete(v StoredObj) bool {
 	}
 	s.splay(n, nil)
 	find := func(i int) (ret *node) {
-		for ret = n.son[i]; ret.son[i^1] != nil; ret = ret.son[i^1] {
+		for ret = n.child[i]; ret.child[i^1] != nil; ret = ret.child[i^1] {
 		}
 		return
 	}
 	pre, nxt := find(0), find(1)
 	s.splay(pre, nil)
 	s.splay(nxt, pre)
-	nxt.son[0] = nil
+	nxt.child[0] = nil
 	s.maintain(nxt)
 	s.maintain(pre)
 	delete(s.index, v.Key())
@@ -185,18 +185,18 @@ func (s *splay) Partition(obj Comparable) StoredObj {
 	s.splay(s.minv, nil)
 	var next *node
 	for p := s.root; p != nil; {
-		if s.chooseSonIndex(obj, p) == 1 {
-			p = p.son[1]
+		if s.chooseChildIndex(obj, p) == 1 {
+			p = p.child[1]
 		} else {
 			next = p
-			p = p.son[0]
+			p = p.child[0]
 		}
 	}
 	s.splay(next, s.minv)
-	if next.son[0] == nil {
+	if next.child[0] == nil {
 		return nil
 	}
-	return next.son[0].obj
+	return next.child[0].obj
 }
 
 func (s *splay) Range(f RangeFunc) {
@@ -205,11 +205,11 @@ func (s *splay) Range(f RangeFunc) {
 		if n == nil {
 			return
 		}
-		dfs(n.son[0])
+		dfs(n.child[0])
 		if n != s.minv && n != s.maxv {
 			f(n.obj)
 		}
-		dfs(n.son[1])
+		dfs(n.child[1])
 	}
 	dfs(s.root)
 }
@@ -220,13 +220,13 @@ func (s *splay) ConditionRange(f ConditionRangeFunc) {
 		if n == nil {
 			return
 		}
-		dfs(n.son[0])
+		dfs(n.child[0])
 		if n != s.minv && n != s.maxv {
 			if !f(n.obj) {
 				return
 			}
 		}
-		dfs(n.son[1])
+		dfs(n.child[1])
 	}
 	dfs(s.root)
 }
@@ -242,11 +242,11 @@ func (s *splay) String() string {
 		if n == nil {
 			return
 		}
-		dfs(n.son[0])
+		dfs(n.child[0])
 		if n != s.minv && n != s.maxv {
 			output.WriteString(n.obj.Key() + ",")
 		}
-		dfs(n.son[1])
+		dfs(n.child[1])
 	}
 	dfs(s.root)
 	return output.String()
@@ -257,7 +257,7 @@ func (s *splay) PrintTree() string {
 	var dfs func(*node, *strings.Builder, bool)
 	dfs = func(n *node, prefixBuilder *strings.Builder, isBottom bool) {
 		prefix := prefixBuilder.String()
-		handleSon := func(n *node, flag bool) {
+		handleChild := func(n *node, flag bool) {
 			if n == nil {
 				return
 			}
@@ -270,7 +270,7 @@ func (s *splay) PrintTree() string {
 			}
 			dfs(n, nextPrefixBuilder, flag)
 		}
-		handleSon(n.son[1], false)
+		handleChild(n.child[1], false)
 		output.WriteString(prefix)
 		if isBottom {
 			output.WriteString("└── ")
@@ -279,7 +279,7 @@ func (s *splay) PrintTree() string {
 		}
 		output.WriteString(n.obj.String())
 		output.WriteByte('\n')
-		handleSon(n.son[0], true)
+		handleChild(n.child[0], true)
 	}
 	output.WriteString("SplayRoot\n")
 	dfs(s.root, &strings.Builder{}, true)
@@ -289,16 +289,16 @@ func (s *splay) PrintTree() string {
 func (s *splay) rotate(x *node) {
 	y := x.parent
 	z := y.parent
-	k := getSonIndex(x, y)
+	k := getChildIndex(x, y)
 	if z != nil {
-		z.son[getSonIndex(y, z)] = x
+		z.child[getChildIndex(y, z)] = x
 	}
 	x.parent = z
-	y.son[k] = x.son[k^1]
-	if x.son[k^1] != nil {
-		x.son[k^1].parent = y
+	y.child[k] = x.child[k^1]
+	if x.child[k^1] != nil {
+		x.child[k^1].parent = y
 	}
-	x.son[k^1] = y
+	x.child[k^1] = y
 	y.parent = x
 	s.maintain(y)
 	s.maintain(x)
@@ -309,7 +309,7 @@ func (s *splay) splay(x, k *node) {
 		y := x.parent
 		z := y.parent
 		if z != k {
-			if getSonIndex(x, y) != getSonIndex(y, z) {
+			if getChildIndex(x, y) != getChildIndex(y, z) {
 				s.rotate(x)
 			} else {
 				s.rotate(y)
