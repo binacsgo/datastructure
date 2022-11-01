@@ -14,6 +14,7 @@ type node struct {
 	child  []*node
 	parent *node
 	obj    splay.StoredObj
+	info   splay.MaintainInfo
 }
 
 func newNode(o splay.StoredObj, p *node) *node {
@@ -21,6 +22,7 @@ func newNode(o splay.StoredObj, p *node) *node {
 		child:  make([]*node, 2),
 		parent: p,
 		obj:    o,
+		info:   o.MakeMaintainInfo(),
 	}
 }
 
@@ -47,14 +49,14 @@ func New() splay.Splay {
 		return 0
 	}
 	s.maintain = func(n *node) {
-		var leftChildObj, rightChildObj splay.StoredObj
+		var leftChildInfo, rightChildInfo splay.MaintainInfo
 		if n.child[0] != nil && n.child[0] != s.minv {
-			leftChildObj = n.child[0].obj
+			leftChildInfo = n.child[0].info
 		}
 		if n.child[1] != nil && n.child[1] != s.maxv {
-			rightChildObj = n.child[1].obj
+			rightChildInfo = n.child[1].info
 		}
-		n.obj.Maintain(leftChildObj, rightChildObj)
+		n.info.Maintain(leftChildInfo, rightChildInfo)
 	}
 	return s
 }
@@ -194,6 +196,7 @@ func (s *dynamicSplay) Clone() splay.Splay {
 			nn.parent = p
 		} else {
 			nn = newNode(n.obj, p)
+			nn.info = n.info.Clone() // ATTENTION
 			index[nn.obj.Key()] = nn
 		}
 		nn.child[0], nn.child[1] = dfs(n.child[0], nn), dfs(n.child[1], nn)
@@ -230,7 +233,7 @@ func (s *dynamicSplay) PrintTree() string {
 		} else {
 			output.WriteString("┌── ")
 		}
-		output.WriteString(n.obj.String())
+		output.WriteString(n.obj.String() + "[" + n.info.String() + "]")
 		output.WriteByte('\n')
 		handleChild(n.child[0], true)
 	}

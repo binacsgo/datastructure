@@ -27,6 +27,7 @@ type staticSplay struct {
 	minv, maxv int
 	hash       map[string]int
 	items      []node
+	infos      []splay.MaintainInfo
 	count      int
 
 	chooseChildIndex func(splay.Comparable, int) int
@@ -39,6 +40,7 @@ func New() splay.Splay {
 		maxv:  2,
 		hash:  make(map[string]int),
 		items: []node{newNode(splay.NilObj, -1), newNode(splay.MinObj, 0), newNode(splay.MaxObj, 1)},
+		infos: []splay.MaintainInfo{splay.NilObj.MakeMaintainInfo(), splay.MinObj.MakeMaintainInfo(), splay.MaxObj.MakeMaintainInfo()},
 		count: 2,
 	}
 	s.items[s.minv].rchild, s.items[s.maxv].parent = s.maxv, s.minv
@@ -51,14 +53,14 @@ func New() splay.Splay {
 	}
 	s.maintain = func(i int) {
 		n := &s.items[i]
-		var leftSonObj, rightSonObj splay.StoredObj
+		var leftChildInfo, rightChildInfo splay.MaintainInfo
 		if n.lchild != 0 && n.lchild != s.minv {
-			leftSonObj = s.items[n.lchild].obj
+			leftChildInfo = s.infos[n.lchild]
 		}
 		if n.rchild != 0 && n.rchild != s.maxv {
-			rightSonObj = s.items[n.rchild].obj
+			rightChildInfo = s.infos[n.rchild]
 		}
-		n.obj.Maintain(leftSonObj, rightSonObj)
+		s.infos[i].Maintain(leftChildInfo, rightChildInfo)
 	}
 	return s
 }
@@ -80,6 +82,7 @@ func (s *staticSplay) Insert(v splay.StoredObj) bool {
 
 	{
 		s.items = append(s.items, newNode(v, p))
+		s.infos = append(s.infos, v.MakeMaintainInfo())
 		s.count++
 		s.hash[v.Key()] = s.count
 		n = s.count
@@ -138,11 +141,13 @@ func (s *staticSplay) Delete(v splay.StoredObj) bool {
 		}
 		s.hash[lastNode.key] = i
 		s.items[i] = s.items[lastIndex]
+		s.infos[i] = s.infos[lastIndex]
 		if s.root == lastIndex {
 			s.root = i
 		}
 	}
 	s.items = s.items[:s.count]
+	s.infos = s.infos[:s.count]
 	s.count--
 	return true
 }
@@ -229,15 +234,18 @@ func (s *staticSplay) String() string {
 
 func (s *staticSplay) Clone() splay.Splay {
 	clone := New().(*staticSplay)
-	hash, items := make(map[string]int, len(s.hash)), make([]node, len(s.hash)+3)
+	hash, items, infos := make(map[string]int, len(s.hash)), make([]node, len(s.hash)+3), make([]splay.MaintainInfo, len(s.hash)+3)
 
 	copy(items, s.items)
 	len := len(s.items)
+	// TODO: Improve the `infos`.
+	infos[0], infos[1], infos[2] = s.infos[0].Clone(), s.infos[1].Clone(), s.infos[2].Clone()
 	for i := 3; i < len; i++ {
 		hash[items[i].key] = i
+		infos[i] = s.infos[i].Clone()
 	}
 
-	clone.hash, clone.items, clone.count, clone.root = hash, items, s.count, s.root
+	clone.hash, clone.items, clone.infos, clone.count, clone.root = hash, items, infos, s.count, s.root
 	return clone
 }
 
@@ -266,7 +274,7 @@ func (s *staticSplay) PrintTree() string {
 		} else {
 			output.WriteString("┌── ")
 		}
-		output.WriteString(s.items[i].obj.String() + "(" + strconv.Itoa(i) + ")")
+		output.WriteString(s.items[i].obj.String() + "(" + strconv.Itoa(i) + ")" + "[" + s.infos[i].String() + "]")
 		output.WriteByte('\n')
 		handleSon(s.items[i].lchild, true)
 	}

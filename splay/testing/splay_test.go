@@ -1,7 +1,6 @@
 package splaytest
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -10,10 +9,32 @@ import (
 	"github.com/binacsgo/datastructure/splay/static"
 )
 
+type info struct {
+	obj *obj
+	sz  int
+}
+
+func (o *info) Maintain(ls, rs splay.MaintainInfo) {
+	o.sz = 1
+	if ls != nil {
+		o.sz += ls.(*info).sz
+	}
+	if rs != nil {
+		o.sz += rs.(*info).sz
+	}
+}
+
+func (o *info) Clone() splay.MaintainInfo {
+	return &info{obj: o.obj, sz: o.sz}
+}
+
+func (o *info) String() string {
+	return strconv.Itoa(o.sz)
+}
+
 type obj struct {
-	k  int
-	v  int
-	sz int
+	k int
+	v int
 }
 
 var (
@@ -22,21 +43,13 @@ var (
 )
 
 func makeObj(k, v int) splay.StoredObj {
-	return &obj{k: k, v: v, sz: 1}
+	return &obj{k: k, v: v}
 }
 
-func (o *obj) Key() string                      { return strconv.Itoa(o.k) }
-func (o *obj) String() string                   { return o.Key() + fmt.Sprintf("(%d)", o.sz) }
-func (o *obj) Compare(so splay.Comparable) bool { return o.v > so.(*obj).v }
-func (o *obj) Maintain(ls, rs splay.StoredObj) {
-	o.sz = 1
-	if ls != nil {
-		o.sz += ls.(*obj).sz
-	}
-	if rs != nil {
-		o.sz += rs.(*obj).sz
-	}
-}
+func (o *obj) Key() string                          { return strconv.Itoa(o.k) }
+func (o *obj) String() string                       { return o.Key() }
+func (o *obj) MakeMaintainInfo() splay.MaintainInfo { return &info{obj: o, sz: 1} }
+func (o *obj) Compare(so splay.Comparable) bool     { return o.v > so.(*obj).v }
 
 func Test_Splay(t *testing.T) {
 	for _, s := range []splay.Splay{dynamic.New(), static.New()} {
@@ -125,6 +138,11 @@ func Test_splay_Clone(t *testing.T) {
 				t.Errorf("Expect object %v, got %v\n", origin, o.Get(so))
 			}
 		})
+
+		t.Logf(s.PrintTree())
+		t.Logf(o.PrintTree())
+
+		o.Partition(makeObj(59, 5))
 
 		t.Logf(s.PrintTree())
 		t.Logf(o.PrintTree())

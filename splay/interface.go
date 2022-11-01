@@ -6,16 +6,27 @@ type Comparable interface {
 	Compare(Comparable) bool
 }
 
+type MaintainInfo interface {
+	// Maintain defines the maintenance operation in the splay, which contains the properties
+	// of the subtree rooted at the current node. We will update the properties of the current
+	// node based on its left and right children.
+	Maintain(MaintainInfo, MaintainInfo)
+
+	// Clone return a clone of the MaintainInfo
+	Clone() MaintainInfo
+
+	// String implements the String interface.
+	String() string
+}
+
 // StoredObj defines all the methods that need to be implemented by the element being stored.
 type StoredObj interface {
 	// Key returns the unique key used by the object in the splay.
 	Key() string
 	// String implements the String interface.
 	String() string
-	// Maintain defines the maintenance operation in the splay, which contains the properties
-	// of the subtree rooted at the current node. We will update the properties of the current
-	// node based on its left and right children.
-	Maintain(StoredObj, StoredObj)
+	// MakeMaintainInfo return a MaintainInfo used by the StoredObj.
+	MakeMaintainInfo() MaintainInfo
 
 	Comparable
 }
@@ -53,13 +64,21 @@ type Splay interface {
 	PrintTree() string
 }
 
+// maintainInfoForLookup defines one of the simplest MaintainInfo implementations for lookups only.
+type maintainInfoForLookup struct{}
+
+func (o *maintainInfoForLookup) Maintain(l, r MaintainInfo) {}
+func (o *maintainInfoForLookup) Clone() MaintainInfo        { return &maintainInfoForLookup{} }
+func (o *maintainInfoForLookup) String() string             { return "maintainInfoForLookup" }
+
 // storedObjForLookup defines one of the simplest StoredObj implementations for lookups only.
 type storedObjForLookup struct{ key string }
 
-func (o *storedObjForLookup) Key() string             { return o.key }
-func (o *storedObjForLookup) String() string          { return o.key }
-func (o *storedObjForLookup) Maintain(_, _ StoredObj) {}
-func (o *storedObjForLookup) Compare(Comparable) bool { return false }
+func (o *storedObjForLookup) Key() string                    { return o.key }
+func (o *storedObjForLookup) String() string                 { return o.key }
+func (o *storedObjForLookup) Maintain(_, _ StoredObj)        {}
+func (o *storedObjForLookup) MakeMaintainInfo() MaintainInfo { return &maintainInfoForLookup{} }
+func (o *storedObjForLookup) Compare(Comparable) bool        { return false }
 func NewStoredObjForLookup(key string) StoredObj {
 	return &storedObjForLookup{
 		key: key,
@@ -67,8 +86,8 @@ func NewStoredObjForLookup(key string) StoredObj {
 }
 
 var (
-	_ Comparable = &storedObjForLookup{}
-	_ StoredObj  = &storedObjForLookup{}
+	_ MaintainInfo = &maintainInfoForLookup{}
+	_ StoredObj    = &storedObjForLookup{}
 
 	NilObj = NewStoredObjForLookup("NilObj")
 	MinObj = NewStoredObjForLookup("MinObj")
